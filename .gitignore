@@ -1,0 +1,8 @@
+node_modules
+.output
+.wxt
+*.zip
+native-host/config.json
+native-host/host.bat
+native-host/host.sh
+native-host/com.ai_tab_grouper.claude.json

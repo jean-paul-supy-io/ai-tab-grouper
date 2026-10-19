@@ -1,0 +1,6 @@
+{
+  "_comment": "Public key that pins the extension ID, so the native messaging host can allow it. No private key is needed for an unpacked extension.",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtPvd4LJnGkkpP85pLAk6EwRriUirngaKvr7Ds8RKjy1XnXNgXPwwr7vS965v2bMAQeZC9ARVIwa5f91nR3uT7D1pA5L/OOu58xGVgu4pjujtSF2zdW2gHxvx7WlHf/NrPZLkb9VvyBZLvoxtHWGgm7saoUtb1gcRHukOfvxy7z+Dap0q0pPgOxFM72SZGypqjO4TXYJDJFD+tpg/wfP4fNgsv4IAgooZetgeFxjkYxMZQpjptRX0Ox2e82mUGtyTnUP8x6nE0VI3xEMlXoEUtQ1756CJYpCTtGuMF3fOVxUsxqbauu+FdCM3jPWThHeZV7cD491m+0WTZervWnN38wIDAQAB",
+  "id": "opakgkiihiepmfdnpemgnapfcocnmaef",
+  "nativeHostName": "com.ai_tab_grouper.claude"
+}
