@@ -16,6 +16,13 @@ const here = dirname(fileURLToPath(import.meta.url));
 const MODELS = new Set(['claude-sonnet-5-5', 'claude-haiku-5-5']);
 const EFFORTS = new Set(['low', 'medium', 'high']);
 const RUN_TIMEOUT_MS = 180_000;
+// Claude Code refreshes its login token on demand. When another Claude Code
+// process (an open terminal session, the desktop app) is refreshing at the same
+// moment, the run fails with a transient error, so retry it with a backoff.
+const TOKEN_REFRESH_RE = /failed to refresh oauth token|another claude code process is refreshing|exited mid-refresh/i;
+const RETRY_DELAYS_MS = [4_000, 12_000, 30_000];
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 function loadConfig() {
   try {
@@ -125,7 +132,25 @@ async function group(msg) {
     '--no-session-persistence',
     '--max-turns', '4',
   ];
-  const run = await runClaude(args, msg.prompt);
+
+  for (let attempt = 0; ; attempt++) {
+    const outcome = await groupOnce(args, msg.prompt);
+    if (!outcome.retryable) return outcome;
+    if (attempt >= RETRY_DELAYS_MS.length) {
+      return {
+        ok: false,
+        kind: 'api',
+        error:
+          'Claude Code could not refresh its login because another Claude Code process was doing the same. ' +
+          'Try again in a minute. If it keeps happening, run `claude` once in a terminal to sign in again.',
+      };
+    }
+    await sleep(RETRY_DELAYS_MS[attempt]);
+  }
+}
+
+async function groupOnce(args, prompt) {
+  const run = await runClaude(args, prompt);
 
   if (run.spawnError) {
     return { ok: false, kind: 'setup', error: `Could not start Claude Code (${claudePath}). Is it installed? Re-run npm run install-host.` };
@@ -137,11 +162,13 @@ async function group(msg) {
     result = JSON.parse(run.stdout.trim());
   } catch {
     const text = (run.stderr || run.stdout).trim().slice(0, 500);
+    if (TOKEN_REFRESH_RE.test(text)) return { retryable: true };
     return { ok: false, kind: classify(text), error: text || `Claude Code exited with code ${run.code}.` };
   }
 
   if (result.is_error || result.subtype !== 'success') {
     const text = [result.result, ...(result.errors ?? [])].filter(Boolean).join(' ').slice(0, 500) || result.subtype;
+    if (TOKEN_REFRESH_RE.test(text)) return { retryable: true };
     return { ok: false, kind: classify(text), error: `Claude Code: ${text}` };
   }
   if (!result.structured_output) {
